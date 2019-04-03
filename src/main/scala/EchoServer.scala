@@ -1,36 +1,62 @@
 import java.net._
 import java.io._
 import scala.io._
-
+//With help from Dr. Beaty, Nathan Whitney, and Ernesto Estrada
 object EchoServer {
-        def main(args: Array[String]) {
-          val server = new ServerSocket(9999)
-          val filepath = System.getProperty("user.dir")
-          try {
-            val page = Source.fromFile(path + "//src//main//scala//home.html")
-            while (true) {
-              val s = server.accept()
-              val in = new BufferedSource(s.getInputStream()).getLines()
-              val out = new PrintStream(s.getOutputStream())
+  def read_and_write(in: BufferedReader, out:BufferedWriter): Unit = {
+    val serverData = in.readLine()
+    out.write(in.readLine())
+    out.write("\r\n")
 
-              out.println(in.next())
-              out.flush()
-              s.close()
-            }
-          }
-          catch {
-            case ex: FileNotFoundException => {
-              val page = Source.fromFile(path + "//src//main//scala//404.html")
-            }
-              while (true) {
-                val s = server.accept()
-                val in = new BufferedSource(s.getInputStream()).getLines()
-                val out = new PrintStream(s.getOutputStream())
+    try{
+      readHome(serverData, out)
+    }
+    catch{
+      case ex: FileNotFoundException =>{
+        errorHandling(serverData, out)
+      }
+    }
+    out.flush()
+    in.close()
+    out.close()
+  }
 
-                out.println(in.next())
-                out.flush()
-                s.close()
-              }
-          }
-        }
+  def serve(server: ServerSocket): Unit = {
+    val s = server.accept()
+    val in = new BufferedReader(new InputStreamReader(s.getInputStream))
+    val out = new BufferedWriter(new OutputStreamWriter(s.getOutputStream))
+
+    read_and_write(in, out)
+
+    s.close()
+  }
+
+  def main(args: Array[String]) {
+    val server = new ServerSocket(9999)
+    while(true) {
+      serve(server)
+    }
+  }
+
+  def readHome(in: String, out:BufferedWriter): Unit = {
+    val htmlFile = Source.fromFile("home.html")
+    val serverIn = in.split(" ")
+
+    out.write(s"${serverIn(2)} Home Page\r\n")
+    out.write("Content-Type=text/html\r\n")
+    out.write("\r\n")
+    out.write(htmlFile.mkString)
+
+  }
+
+  def errorHandling(in: String, out:BufferedWriter): Unit = {
+    val fourohfour = Source.fromFile("404.html")
+    val serverIn = in.split(" ")
+
+    out.write(s"${serverIn(2)} 404 File Not Found \r\n")
+    out.write("Content-Type=text/html\r\n")
+    out.write("\r\n")
+    out.write(fourohfour.mkString)
+
+  }
 }
